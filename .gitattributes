@@ -1,0 +1,2 @@
+json/*.json filter=lfs diff=lfs merge=lfs -text
+survey_data/*.sav filter=lfs diff=lfs merge=lfs -text
