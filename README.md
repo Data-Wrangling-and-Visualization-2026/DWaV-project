@@ -217,3 +217,139 @@ The next phase encompasses three main activities:
 3. **Systematizing** into JSON files — creating a structured, categorized representation of the data
 
 Upon completion of these steps, the World Values Survey data will be transformed from raw downloadable files into a well-organized, documented, and easily accessible JSON format, ready for subsequent analysis and visualization tasks.
+
+
+
+
+# World Values Survey — Cleaned Dataset
+
+## Source
+- **Original**: `dataset.jsonl` (30 GB, 884,946 rows, 726 columns)
+- **Survey**: World Values Survey (WVS), waves 1–7 (1981–2022), 108 countries
+
+## What Was Cleaned
+1. **Removed sentinel/placeholder values**: `VOICE2- Welzel voice-2`, `-1` to `-5`, `"Not asked"`, `"Not asked in survey"`, `"No answer"`, `"Don't know"`, `"Missing; Unknown"`, `"Missing; Not available"`, `"Not applicable"`
+2. **Stripped null fields** from JSON (if a respondent wasn't asked a question, that key is simply absent from their row)
+3. **Selected 42 most visualization-worthy columns** from the original 726
+4. **Sorted** alphabetically by country code (ALB → ZWE), then by wave (1–7), then by survey year
+
+## Files (908 MB total)
+
+| File | Size | Rows | Description |
+|------|------|------|-------------|
+| `demographics.json` | 110 MB | 884,896 | Sex, age, education, employment, income, marital status |
+| `values_and_happiness.json` | 134 MB | 884,780 | Happiness, life satisfaction, health, freedom, family/work importance |
+| `trust_and_institutions.json` | 141 MB | 881,940 | Interpersonal trust, confidence in government/police/army/press/justice |
+| `politics.json` | 130 MB | 882,306 | Political interest, left-right scale, democracy views, economic equality |
+| `social_and_cultural.json` | 156 MB | 884,883 | Religiosity, god importance, neighbor tolerance, child qualities |
+| `moral_views.json` | 131 MB | 881,194 | Justifiability of bribery/homosexuality/abortion/divorce/suicide, post-materialism |
+| `welzel_indices.json` | 107 MB | 884,774 | Emancipative values, secular values, autonomy/equality/choice/voice indices |
+| `codebook.json` | <1 KB | — | Maps short column names to original WVS variable names |
+
+## Key Columns (present in every file)
+
+| Key | Meaning | Example |
+|-----|---------|---------|
+| `cc` | 3-letter ISO country code | `"ALB"`, `"USA"`, `"JPN"` |
+| `w` | WVS wave number (1–7) | `3` |
+| `yr` | Year the survey was conducted | `"1998"` |
+
+## Column Reference by File
+
+### demographics.json
+| Column | Meaning |
+|--------|---------|
+| `sex` | Male / Female |
+| `age` | Age in years |
+| `edu` | Education level (Lower / Middle / Upper) |
+| `emp` | Employment status (Full time, Part time, Self employed, Retired, Students, etc.) |
+| `income` | Subjective income level (10-step scale: First step to Tenth step) |
+| `marital` | Marital status (Married, Single/Never married, Divorced, Widowed, etc.) |
+
+### values_and_happiness.json
+| Column | Meaning |
+|--------|---------|
+| `happy` | Feeling of happiness (Very happy / Quite happy / Not very happy / Not at all happy) |
+| `life_sat` | Satisfaction with life (1 = Dissatisfied → 10 = Satisfied) |
+| `health` | Subjective state of health (Very good / Good / Fair / Poor) |
+| `freedom` | How much freedom of choice and control (1 = None at all → 10 = A great deal) |
+| `imp_family` | Importance of family in life (Very / Rather / Not very / Not at all important) |
+| `imp_work` | Importance of work in life (same scale) |
+
+### trust_and_institutions.json
+| Column | Meaning |
+|--------|---------|
+| `trust` | Most people can be trusted vs. need to be very careful |
+| `gov` | Confidence in the government (A great deal / Quite a lot / Not very much / None at all) |
+| `police` | Confidence in the police (same scale) |
+| `army` | Confidence in the armed forces (same scale) |
+| `press` | Confidence in the press (same scale) |
+| `justice` | Confidence in the justice system/courts (same scale) |
+
+### politics.json
+| Column | Meaning |
+|--------|---------|
+| `interest` | Interest in politics (Very / Somewhat / Not very / Not at all interested) |
+| `lr_scale` | Left-right self-positioning (1 = Left → 10 = Right) |
+| `democracy` | How important is it to live in a democracy (1 = Not at all → 10 = Absolutely important) |
+| `sys_demo` | Having a democratic political system (Very good / Fairly good / Fairly bad / Very bad) |
+| `sys_leader` | Having a strong leader who doesn't bother with parliament (same scale) |
+| `econ_eq` | Income equality preference (Incomes should be made more equal ↔ We need larger income differences) |
+
+### social_and_cultural.json
+| Column | Meaning |
+|--------|---------|
+| `religious` | A religious person / Not a religious person / A convinced atheist |
+| `god_imp` | How important is God in your life (1 = Not at all → 10 = Very important) |
+| `nbr_race` | Would not like as neighbors: people of a different race (Mentioned / Not mentioned) |
+| `nbr_immig` | Would not like as neighbors: immigrants/foreign workers (Mentioned / Not mentioned) |
+| `nbr_homo` | Would not like as neighbors: homosexuals (Mentioned / Not mentioned) |
+| `child_indep` | Important child quality: independence (Important / Not mentioned) |
+
+### moral_views.json
+| Column | Meaning |
+|--------|---------|
+| `bribe` | Is accepting a bribe justifiable (1 = Never → 10 = Always justifiable) |
+| `homo` | Is homosexuality justifiable (same scale) |
+| `abort` | Is abortion justifiable (same scale) |
+| `divorce` | Is divorce justifiable (same scale) |
+| `suicide` | Is suicide justifiable (same scale) |
+| `postmat` | Post-materialist index (Materialist / Mixed / Post-materialist) |
+
+### welzel_indices.json
+| Column | Meaning |
+|--------|---------|
+| `emancip` | Welzel emancipative values index (0–1 scale) |
+| `secular` | Welzel overall secular values (0–1 scale) |
+| `autonomy` | Welzel autonomy sub-index (0–1 scale) |
+| `equality` | Welzel equality sub-index (0–1 scale) |
+| `choice` | Welzel choice sub-index (0–1 scale) |
+| `voice` | Welzel voice sub-index (0–1 scale) |
+
+## Row Counts Differ Slightly Between Files
+Not every respondent was asked every question. Rows where ALL theme-specific columns would be null are excluded from that file. The key columns (`cc`, `w`, `yr`) link rows across files.
+
+## How to Use
+
+```python
+import json
+
+with open("clean/demographics.json") as f:
+    demo = json.load(f)
+
+# All Albanian respondents
+albania = [r for r in demo if r["cc"] == "ALB"]
+
+# Wave 7 (2017-2022) data only
+wave7 = [r for r in demo if r.get("w") == 7]
+```
+
+```javascript
+// In a web app
+fetch("clean/values_and_happiness.json")
+  .then(r => r.json())
+  .then(data => {
+    const happy = data.filter(r => r.happy === "Very happy");
+    console.log(`${happy.length} very happy respondents`);
+  });
+```
