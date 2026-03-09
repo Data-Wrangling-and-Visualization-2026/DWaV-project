@@ -1,13 +1,119 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WVS Values Explorer</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>World Values Survey Explorer</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <!-- Top Control Bar -->
+  <header id="control-bar">
+    <div class="logo">WVS Explorer</div>
+    <div class="controls">
+      <div class="control-group">
+        <label for="theme-select">Theme</label>
+        <select id="theme-select"></select>
+      </div>
+      <div class="control-group">
+        <label for="metric-select">Metric</label>
+        <select id="metric-select"></select>
+      </div>
+      <div class="control-group">
+        <label for="wave-select">Wave</label>
+        <select id="wave-select">
+          <option value="">Latest</option>
+        </select>
+      </div>
+      <div class="control-group search-group">
+        <label for="country-search">Search</label>
+        <input type="text" id="country-search" placeholder="Type country name..." autocomplete="off">
+        <div id="search-results" class="search-dropdown"></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Map description bar -->
+  <div id="metric-description-bar">
+    <span id="metric-desc-text">Select a theme and metric to explore survey data across 108 countries.</span>
+  </div>
+
+  <!-- Main Content -->
+  <main id="main-content">
+    <!-- Map Panel -->
+    <section id="map-panel">
+      <div id="map-container">
+        <div id="loading-spinner" class="spinner">Loading...</div>
+      </div>
+      <div id="map-legend"></div>
+      <div id="map-legend-desc" class="legend-desc"></div>
+      <div id="map-tooltip" class="tooltip"></div>
+      <!-- Help hint on the map -->
+      <div id="map-hint">Click any country on the map to see detailed data. Scroll to zoom, drag to pan.</div>
+    </section>
+
+    <!-- Detail Panel -->
+    <aside id="detail-panel" class="panel-closed">
+      <div id="detail-header">
+        <h2 id="detail-country-name">Select a country</h2>
+        <span id="detail-country-code"></span>
+        <button id="detail-close" title="Close">&times;</button>
+      </div>
+      <div id="detail-content">
+        <div class="detail-section">
+          <h3>Trend Across Waves</h3>
+          <p class="chart-desc" id="trend-desc">Shows how the average value of the selected metric changed over survey waves (1981-2022). Each point is the mean score for this country in that wave.</p>
+          <canvas id="trend-chart"></canvas>
+        </div>
+        <div class="detail-section">
+          <h3 id="dist-title">Response Distribution</h3>
+          <p class="chart-desc" id="dist-desc">Shows how respondents in this country answered the question. Each bar is a response option with its count.</p>
+          <canvas id="dist-chart"></canvas>
+        </div>
+        <button id="add-compare-btn" class="btn">+ Add to Comparison</button>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Comparison Panel -->
+  <section id="compare-panel" class="compare-collapsed">
+    <div id="compare-header" onclick="toggleCompare()">
+      <h3>Country Comparison</h3>
+      <span id="compare-count">0 countries selected</span>
+      <span id="compare-toggle">&#9650;</span>
+    </div>
+    <div id="compare-content">
+      <div id="compare-tags"></div>
+      <div class="compare-add">
+        <select id="compare-country-select">
+          <option value="">+ Add country...</option>
+        </select>
+        <button id="clear-compare-btn" class="btn btn-small">Clear All</button>
+      </div>
+      <div id="compare-charts">
+        <div class="compare-chart-container">
+          <h4>Metric Trend Comparison</h4>
+          <p class="chart-desc">Each line shows one country's average score over time. Compare how countries evolved differently across survey waves.</p>
+          <canvas id="compare-trend-chart"></canvas>
+        </div>
+        <div class="compare-chart-container">
+          <h4>Welzel Values Radar</h4>
+          <p class="chart-desc">Compares countries on 6 Welzel cultural indices (0-1 scale). Larger area = more emancipative/secular values. Based on the latest available wave.</p>
+          <canvas id="compare-radar-chart"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script src="js/app.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/compare.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => App.init());
+  </script>
+</body>
 </html>
