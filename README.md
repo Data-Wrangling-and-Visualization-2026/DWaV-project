@@ -16,8 +16,7 @@ An interactive web application for exploring and visualizing data from the [Worl
 ## Project Structure
 
 ```
-├── json/                  # Raw cleaned JSON data (from loading_json branch)
-├── data/                  # Preprocessed aggregated data for the webapp (~2MB)
+├── json/                  # Cleaned JSON data + preprocessed aggregated data
 ├── backend/
 │   ├── main.py            # FastAPI application with REST API
 │   └── requirements.txt   # Python dependencies
@@ -29,7 +28,7 @@ An interactive web application for exploring and visualizing data from the [Worl
 │       ├── map.js         # D3.js world map (choropleth + zoom/pan)
 │       ├── charts.js      # Chart.js trend & distribution charts
 │       └── compare.js     # Country comparison panel
-├── preprocess.py          # Script to regenerate data/ from json/
+├── preprocess.py          # Script to regenerate aggregated data in json/
 ├── Dockerfile             # Docker image definition
 ├── docker-compose.yml     # Docker Compose config
 └── README.md
@@ -37,9 +36,9 @@ An interactive web application for exploring and visualizing data from the [Worl
 
 ## Data Pipeline
 
-1. **Raw data** (`json/` folder) — Cleaned World Values Survey data split into 7 thematic JSON files (~900MB total, stored via Git LFS). Contributed in the `loading_json` branch.
-2. **Preprocessing** (`preprocess.py`) — Aggregates the raw JSON files into compact summaries (~2MB): per-country, per-wave means, sample sizes, and response distributions.
-3. **Backend** (`backend/main.py`) — FastAPI server that loads the preprocessed data into memory and exposes REST API endpoints.
+1. **Data** (`json/` folder) — Cleaned World Values Survey data split into 7 thematic JSON files (contributed in the `loading_json` branch), plus preprocessed aggregated summaries used by the webapp.
+2. **Preprocessing** (`preprocess.py`) — Aggregates the raw JSON files into compact summaries (~2MB): per-country, per-wave means, sample sizes, and response distributions. Output goes into `json/`.
+3. **Backend** (`backend/main.py`) — FastAPI server that loads the preprocessed data from `json/` into memory and exposes REST API endpoints.
 4. **Frontend** (`frontend/`) — Pure HTML/CSS/JS app using D3.js for the map and Chart.js for charts.
 
 ## Quick Start

@@ -10,8 +10,8 @@ import os
 import sys
 from collections import defaultdict
 
-CLEAN_DIR = "/home/lambada/NEW100GB/clean"
-OUT_DIR = "/home/lambada/NEW100GB/webapp/data"
+CLEAN_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "json")
+OUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "json")
 
 # ── Ordinal value → numeric score mappings ──────────────────────────────────
 # Used to compute means for choropleth map coloring
