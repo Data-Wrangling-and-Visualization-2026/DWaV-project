@@ -14,7 +14,7 @@ Interactive web app for exploring [World Values Survey](https://www.worldvaluess
 
 This version is fully SQLite-based and now includes **historical events per wave/country** shown directly in the detail panel.
 
-<img width="1909" height="898" alt="image" src="https://github.com/user-attachments/assets/6f03b2ac-14f2-4df6-840c-8c137802e5a3" />
+<img width="1899" height="903" alt="image" src="https://github.com/user-attachments/assets/ab6d762a-85d2-420a-9a37-c0fae1516c19" />
 
 ## What Is New In This Version
 
