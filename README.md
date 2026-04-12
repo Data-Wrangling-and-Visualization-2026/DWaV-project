@@ -1,9 +1,11 @@
 # World Values Survey Explorer (v2 - SQLite + Historical Events)
 
-Interactive web app for exploring [World Values Survey](https://www.worldvaluessurvey.org/) data across **108 countries** and **7 waves (1981-2022)**.
-
 
 <img width="1909" height="898" alt="image" src="https://github.com/user-attachments/assets/6f03b2ac-14f2-4df6-840c-8c137802e5a3" />
+
+
+Interactive web app for exploring [World Values Survey](https://www.worldvaluessurvey.org/) data across **108 countries** and **7 waves (1981-2022)**.
+
 
 
 This version is fully SQLite-based and now includes **historical events per wave/country** shown directly in the detail panel.
