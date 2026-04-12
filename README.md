@@ -1,4 +1,9 @@
 # World Values Survey Explorer (v2 - SQLite + Historical Events)
+![Python](https://img.shields.io/badge/Python-3.11-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115-green)
+![SQLite](https://img.shields.io/badge/SQLite-3.x-lightblue)
+![Docker](https://img.shields.io/badge/Docker-28.0+-blue)
+![License](https://img.shields.io/badge/License-MIT-yellow)
 
 
 
@@ -32,6 +37,7 @@ This version is fully SQLite-based and now includes **historical events per wave
 - Country comparison (line + Welzel radar).
 - Wave selector (specific wave or latest).
 - Fast country search.
+- Compare up to **10 countries** simultaneously (trend line chart + Welzel radar)
 
 ## Project Structure
 
@@ -69,6 +75,12 @@ Place `wvs_data.db` in the project root (`DWaV-v3/`).
 2. Put it into project root.
 3. Run app (Docker or local).
 
+### Prerequisites
+
+- Docker Desktop (for containerized run) OR
+- Python 3.11+ with pip (for local run)
+- 1 GB free disk space (for database + Docker images)
+
 ### Run the app
 
 #### Docker
@@ -104,6 +116,17 @@ Open [http://localhost:8000](http://localhost:8000).
 | `GET /api/distribution/{theme}/{metric}/{cc}?wave=N` | Distribution for one country |
 | `GET /api/events/{cc}?wave=N&event_type=TYPE&limit=24` | Historical events for country + global context |
 | `GET /api/country/{cc}` | Full country data |
+
+
+## Configuration
+
+Optional environment variables:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `HOST` | `0.0.0.0` | Server host |
+| `PORT` | `8000` | Server port |
+
 
 ## Tech Stack
 
