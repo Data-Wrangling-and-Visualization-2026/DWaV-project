@@ -144,6 +144,6 @@ Optional environment variables:
 
 ## Team
 
-Muhammadjon Aslonov
-Irina Napalkova
-Amaliya Kharisova
+- Muhammadjon Aslonov
+- Irina Napalkova
+- Amaliya Kharisova
