@@ -3,6 +3,10 @@
 Backend + Frontend application for interactive visualization of **World Values Survey (WVS)** data.
 
 
+<img width="1909" height="898" alt="image" src="https://github.com/user-attachments/assets/d01e0192-eb84-4f98-a09a-4dc39523c663" />
+
+
+
 ### Source
 
 **Link:** [www.worldvaluessurvey.org](https://www.worldvaluessurvey.org/WVSOnline.jsp)
