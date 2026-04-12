@@ -56,6 +56,7 @@ This version is fully SQLite-based and now includes **historical events per wave
 ├── wvs_events_final.json
 ├── Dockerfile
 ├── docker-compose.yml
+├── wvs_data.db
 └── README.md
 ```
 
