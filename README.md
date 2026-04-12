@@ -3,7 +3,6 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115-green)
 ![SQLite](https://img.shields.io/badge/SQLite-3.x-lightblue)
 ![Docker](https://img.shields.io/badge/Docker-28.0+-blue)
-![License](https://img.shields.io/badge/License-MIT-yellow)
 
 
 
