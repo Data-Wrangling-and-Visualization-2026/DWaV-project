@@ -66,7 +66,7 @@ Primary SQLite database file: `wvs_data.db` (~580 MB)
 
 - Download link: [DWaV database (Google Drive)](https://drive.google.com/drive/folders/1r1kX32NKC0Tx9SCo3kmC4VZgXkHJ3e4k?usp=sharing)
 
-Place `wvs_data.db` in the project root (`DWaV-v3/`).
+Place `wvs_data.db` in the project root (`DWaV-v2/`).
 
 ## Setup
 
