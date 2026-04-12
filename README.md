@@ -103,6 +103,7 @@ Open [http://localhost:8000](http://localhost:8000).
 - If `wvs_events` is empty and `wvs_events_final.json` exists, events are imported automatically.
 - After import, events are read from SQLite (the app can run without JSON file if DB already has events).
 
+
 ## API Endpoints
 
 | Endpoint | Description |
@@ -133,6 +134,12 @@ Optional environment variables:
 - Frontend: HTML, CSS, Vanilla JS
 - Charts/Map: Chart.js, D3.js, TopoJSON
 - Deployment: Docker / Docker Compose
+
+## Data Sources
+
+- **World Values Survey** — official survey data (waves 1-7, 1981-2022)
+- **Historical events** — scraped from Wikipedia (country-specific and global events for each wave period)
+- **Welzel indices** — calculated based on Christian Welzel's methodology (2013)
 
 ## Team
 
