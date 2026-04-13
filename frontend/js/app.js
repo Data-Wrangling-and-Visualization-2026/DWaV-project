@@ -84,6 +84,7 @@ const App = (() => {
   // ── Init ───────────────────────────────────────────────────
   async function init() {
     try {
+      setupIntroOverlay();
       const [countries, themes, waves] = await Promise.all([
         api('/countries'), api('/themes'), api('/waves'),
       ]);
@@ -118,6 +119,19 @@ const App = (() => {
       console.error('Init failed:', err);
       document.getElementById('loading-spinner').textContent = 'Failed to load data. Is the backend running?';
     }
+  }
+
+  function setupIntroOverlay() {
+    const overlay = document.getElementById('intro-overlay');
+    const enterBtn = document.getElementById('intro-enter-btn');
+    const openBtn = document.getElementById('open-intro-btn');
+    if (!overlay || !enterBtn || !openBtn) return;
+
+    const closeIntro = () => overlay.classList.add('hidden');
+    const openIntro = () => overlay.classList.remove('hidden');
+
+    enterBtn.addEventListener('click', closeIntro);
+    openBtn.addEventListener('click', openIntro);
   }
 
   // ── Controls ───────────────────────────────────────────────

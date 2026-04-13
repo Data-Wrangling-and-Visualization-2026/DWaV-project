@@ -6,14 +6,18 @@ Loads data from SQLite database on startup and serves it via REST endpoints.
 import sqlite3
 import json
 import html
+import re
+import difflib
+from urllib import request as urlrequest
 from collections import defaultdict
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Literal
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from pydantic import BaseModel, Field, ValidationError
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DB_PATH = BASE_DIR / "wvs_data.db"
@@ -211,6 +215,89 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+OLLAMA_URL = "http://127.0.0.1:11434/api/generate"
+OLLAMA_MODEL = "qwen2.5:14b"
+
+METRIC_ALIASES = {
+    "happiness": "happy",
+    "happy": "happy",
+    "income": "income",
+    "life satisfaction": "life_sat",
+    "life_sat": "life_sat",
+    "trust": "trust",
+    "democracy": "democracy",
+    "government confidence": "gov",
+}
+
+EVENT_TYPE_ALIASES = {
+    "economic": "economic_crisis",
+    "economic_crises": "economic_crisis",
+    "regime": "regime_change",
+    "regime_change": "regime_change",
+    "political": "regime_change",
+    "conflict": "conflict",
+    "war": "conflict",
+    "protest": "protest",
+    "election": "election",
+    "alliance": "alliance_join",
+    "alliance_join": "alliance_join",
+    "olympics": "olympics",
+    "other": "other",
+}
+
+KNOWN_EVENT_TYPES = {
+    "alliance_join", "conflict", "economic_crisis", "election",
+    "olympics", "other", "protest", "regime_change",
+}
+
+
+class AICompareRequest(BaseModel):
+    prompt: str = Field(min_length=8, max_length=1200)
+
+
+class ParsedAIQuery(BaseModel):
+    intent: Literal["compare"]
+    countries: list[str]
+    metrics: list[str]
+    waves: str | int | list[int] = "all"
+    include_events: bool = True
+    event_types: list[str] = []
+    chart_type: str = "line_with_annotations"
+
+
+def build_country_lookup():
+    lookup = {}
+    for cc, name in CC_TO_NAME.items():
+        lookup[cc.lower()] = cc
+        lookup[name.lower()] = cc
+    lookup.update({
+        "usa": "USA",
+        "us": "USA",
+        "u.s.": "USA",
+        "uk": "GBR",
+        "u.k.": "GBR",
+        "england": "GBR",
+        "russian": "RUS",
+    })
+    return lookup
+
+
+def build_metric_lookup():
+    lookup = {}
+    metric_to_theme = {}
+    for theme_id, tmeta in THEME_META.items():
+        for metric_id, mmeta in tmeta["metrics"].items():
+            lookup[metric_id.lower()] = metric_id
+            lookup[mmeta["name"].lower()] = metric_id
+            metric_to_theme[metric_id] = theme_id
+    lookup.update(METRIC_ALIASES)
+    return lookup, metric_to_theme
+
+
+COUNTRY_LOOKUP = build_country_lookup()
+METRIC_LOOKUP, METRIC_TO_THEME = build_metric_lookup()
+COUNTRY_STOPWORDS = {"and", "with", "wave", "latest", "compare", "metric", "metrics", "happiness", "income"}
 
 
 def to_numeric(val):
@@ -452,6 +539,318 @@ def load_events_into_db(conn):
     print(f"  Events imported into SQLite: {len(rows)} rows", flush=True)
 
 
+def extract_first_json(text: str) -> dict:
+    if not text:
+        return {}
+    text = text.strip()
+    if text.startswith("{") and text.endswith("}"):
+        return json.loads(text)
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+    if not match:
+        return {}
+    return json.loads(match.group(0))
+
+
+def parse_prompt_with_llm(prompt: str) -> dict:
+    system_prompt = (
+        "You are a query parser. Convert user request to STRICT JSON only.\n"
+        "Return exactly one object with keys:\n"
+        "intent, countries, metrics, waves, include_events, event_types, chart_type.\n"
+        "Rules:\n"
+        "- intent must be 'compare'.\n"
+        "- countries must be array of country names or ISO3 codes.\n"
+        "- metrics must be array of metric names or ids.\n"
+        "- waves must be 'all' or array of wave numbers.\n"
+        "- include_events must be true/false.\n"
+        "- event_types must be array (possibly empty).\n"
+        "- chart_type must be 'line_with_annotations'.\n"
+        "- No markdown, no explanations.\n"
+    )
+    payload = {
+        "model": OLLAMA_MODEL,
+        "prompt": f"{system_prompt}\nUser request: {prompt}",
+        "stream": False,
+        "format": "json",
+        "options": {"temperature": 0},
+    }
+    req = urlrequest.Request(
+        OLLAMA_URL,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    with urlrequest.urlopen(req, timeout=45) as resp:
+        data = json.loads(resp.read().decode("utf-8"))
+    return extract_first_json(data.get("response", ""))
+
+
+def fallback_parse_prompt(prompt: str) -> dict:
+    plow = prompt.lower()
+    countries = []
+    for key, cc in COUNTRY_LOOKUP.items():
+        if key in COUNTRY_STOPWORDS:
+            continue
+        if len(key) > 2 and re.search(rf"\b{re.escape(key)}\b", plow):
+            countries.append(cc)
+    metrics = []
+    for key, mid in METRIC_LOOKUP.items():
+        if len(key) > 2 and re.search(rf"\b{re.escape(key)}\b", plow):
+            metrics.append(mid)
+    waves = "all"
+    wave_matches = re.findall(r"\bwave[s]?\s*([1-7])\b", plow)
+    ordinal_wave_matches = re.findall(r"\b([1-7])(st|nd|rd|th)\s+wave\b", plow)
+    if wave_matches:
+        waves = sorted({int(w) for w in wave_matches})
+    elif ordinal_wave_matches:
+        waves = sorted({int(w[0]) for w in ordinal_wave_matches})
+    include_events = ("event" in plow) or ("history" in plow)
+    return {
+        "intent": "compare",
+        "countries": sorted(set(countries)),
+        "metrics": sorted(set(metrics)),
+        "waves": waves,
+        "include_events": include_events,
+        "event_types": [],
+        "chart_type": "line_with_annotations",
+    }
+
+
+def extract_prompt_overrides(prompt: str):
+    plow = prompt.lower()
+    countries = []
+    for key, cc in COUNTRY_LOOKUP.items():
+        if key in COUNTRY_STOPWORDS:
+            continue
+        if len(key) > 1 and re.search(rf"\b{re.escape(key)}\b", plow):
+            countries.append(cc)
+    countries = sorted(set(countries))
+
+    metrics = []
+    for key, mid in METRIC_LOOKUP.items():
+        if len(key) > 2 and re.search(rf"\b{re.escape(key)}\b", plow):
+            metrics.append(mid)
+    metrics = sorted(set(metrics))
+
+    # Fuzzy fallback for typo-heavy prompts.
+    if not countries:
+        tokens = re.findall(r"[a-zA-Z\.]{3,}", plow)
+        country_keys = [name.lower() for name in CC_TO_NAME.values()] + [
+            "russia", "russian", "united states", "usa", "us", "united kingdom", "uk"
+        ]
+        for tok in tokens:
+            if tok in COUNTRY_STOPWORDS:
+                continue
+            best_key = None
+            best_score = 0.0
+            for key in country_keys:
+                score = difflib.SequenceMatcher(a=tok, b=key).ratio()
+                if score > best_score:
+                    best_score = score
+                    best_key = key
+            if best_key and best_score >= 0.84:
+                countries.append(COUNTRY_LOOKUP[best_key])
+        countries = sorted(set(countries))
+
+    if not metrics:
+        tokens = re.findall(r"[a-zA-Z_]{4,}", plow)
+        metric_keys = [k for k in METRIC_LOOKUP.keys() if len(k) >= 4]
+        for tok in tokens:
+            matches = difflib.get_close_matches(tok, metric_keys, n=1, cutoff=0.72)
+            if matches:
+                metrics.append(METRIC_LOOKUP[matches[0]])
+        metrics = sorted(set(metrics))
+
+    # Country-specific wave requests, e.g. "US 1st wave", "Russia latest wave"
+    country_wave_selection = {}
+    for cc in countries:
+        cname = CC_TO_NAME.get(cc, "").lower()
+        aliases = [cc.lower(), cname]
+        if cc == "USA":
+            aliases.extend(["us", "u.s.", "united states"])
+        if cc == "RUS":
+            aliases.extend(["russia", "russian"])
+        for alias in aliases:
+            if not alias:
+                continue
+            m_ord = re.search(rf"\b{re.escape(alias)}\b.*?\b([1-7])(st|nd|rd|th)\s+wave\b", plow)
+            m_num = re.search(rf"\b{re.escape(alias)}\b.*?\bwave\s*([1-7])\b", plow)
+            m_latest = re.search(rf"\b{re.escape(alias)}\b.*?\blatest\s+wave\b", plow)
+            if m_ord:
+                country_wave_selection[cc] = int(m_ord.group(1))
+                break
+            if m_num:
+                country_wave_selection[cc] = int(m_num.group(1))
+                break
+            if m_latest:
+                country_wave_selection[cc] = "latest"
+                break
+
+    return {
+        "countries": countries,
+        "metrics": metrics,
+        "country_wave_selection": country_wave_selection,
+    }
+
+
+def normalize_parsed_query(raw: dict):
+    countries_in = raw.get("countries") or []
+    metrics_in = raw.get("metrics") or []
+    unresolved_countries = []
+    unresolved_metrics = []
+
+    countries = []
+    for c in countries_in:
+        cc = COUNTRY_LOOKUP.get(str(c).strip().lower())
+        if cc:
+            countries.append(cc)
+        else:
+            unresolved_countries.append(c)
+    countries = sorted(set(countries))
+
+    metrics = []
+    for m in metrics_in:
+        mid = METRIC_LOOKUP.get(str(m).strip().lower())
+        if mid:
+            metrics.append(mid)
+        else:
+            unresolved_metrics.append(m)
+    metrics = sorted(set(metrics))
+
+    waves_raw = raw.get("waves", "all")
+    if isinstance(waves_raw, str) and waves_raw.lower() == "all":
+        waves = list(range(1, 8))
+    elif isinstance(waves_raw, int):
+        waves = [waves_raw] if 1 <= waves_raw <= 7 else []
+    elif isinstance(waves_raw, list):
+        waves = sorted({int(w) for w in waves_raw if str(w).isdigit() and 1 <= int(w) <= 7})
+    else:
+        waves = []
+
+    normalized_event_types = []
+    for t in (raw.get("event_types") or []):
+        key = str(t).strip().lower()
+        mapped = EVENT_TYPE_ALIASES.get(key, key)
+        if mapped in KNOWN_EVENT_TYPES:
+            normalized_event_types.append(mapped)
+
+    normalized = {
+        "intent": "compare",
+        "countries": countries,
+        "metrics": metrics,
+        "waves": waves if waves else list(range(1, 8)),
+        "include_events": bool(raw.get("include_events", True)),
+        "event_types": sorted(set(normalized_event_types)),
+        "chart_type": "line_with_annotations",
+    }
+    return normalized, unresolved_countries, unresolved_metrics
+
+
+def get_series_points(country_code: str, metric_id: str, selected_waves: list[int]):
+    theme_id = METRIC_TO_THEME.get(metric_id)
+    if not theme_id:
+        return []
+    metric_data = theme_data.get(theme_id, {}).get(metric_id, {})
+    country_data = metric_data.get(country_code)
+    if not country_data:
+        return []
+    points = []
+    for wave in selected_waves:
+        wdata = country_data.get("waves", {}).get(str(wave))
+        if not wdata:
+            points.append({"wave": wave, "mean": None, "n": 0})
+        else:
+            points.append({"wave": wave, "mean": wdata.get("mean"), "n": wdata.get("n", 0)})
+    return points
+
+
+def latest_wave_for_metric_country(country_code: str, metric_id: str):
+    theme_id = METRIC_TO_THEME.get(metric_id)
+    if not theme_id:
+        return None
+    metric_data = theme_data.get(theme_id, {}).get(metric_id, {})
+    country_data = metric_data.get(country_code)
+    if not country_data:
+        return None
+    waves_data = country_data.get("waves", {})
+    if not waves_data:
+        return None
+    return max(int(w) for w in waves_data.keys())
+
+
+def fetch_events_for_wave(conn, cc: str, wave: int, event_types: list[str], limit: int = 3):
+    clauses = ["wave = ?", "(cc = ? OR cc IS NULL)"]
+    params = [wave, cc]
+    if event_types:
+        placeholders = ",".join("?" for _ in event_types)
+        clauses.append(f"LOWER(event_type) IN ({placeholders})")
+        params.extend(event_types)
+    query = f"""
+        SELECT event_type, title, country, source
+        FROM wvs_events
+        WHERE {" AND ".join(clauses)}
+        ORDER BY cc IS NULL, confidence DESC, id
+        LIMIT ?
+    """
+    params.append(limit)
+    rows = conn.execute(query, tuple(params)).fetchall()
+    return [dict(r) for r in rows]
+
+
+def detect_significant_changes(conn, country_code: str, metric_id: str, points: list[dict], event_types: list[str]):
+    annotations = []
+    previous = None
+    for point in points:
+        current = point.get("mean")
+        if current is None:
+            continue
+        if previous is None:
+            previous = point
+            continue
+        delta = current - previous["mean"]
+        if abs(delta) >= 0.6:
+            wave = point["wave"]
+            related = fetch_events_for_wave(conn, country_code, wave, event_types, limit=2)
+            event_note = "No linked event found"
+            if related:
+                first = related[0]
+                etype = (first.get("event_type") or "event").replace("_", " ")
+                event_note = f"{etype}: {first.get('title', '')}"
+            direction = "Increase" if delta > 0 else "Drop"
+            annotations.append({
+                "wave": wave,
+                "value": current,
+                "country": country_code,
+                "metric": metric_id,
+                "delta": round(delta, 3),
+                "label": f"{direction} in W{wave} ({delta:+.2f}) -> {event_note}",
+                "events": related,
+            })
+        previous = point
+    return annotations
+
+
+def add_event_context_annotation(conn, country_code: str, metric_id: str, points: list[dict], event_types: list[str]):
+    for point in points:
+        value = point.get("mean")
+        if value is None:
+            continue
+        related = fetch_events_for_wave(conn, country_code, point["wave"], event_types, limit=1)
+        if not related:
+            continue
+        first = related[0]
+        etype = (first.get("event_type") or "event").replace("_", " ")
+        return {
+            "wave": point["wave"],
+            "value": value,
+            "country": country_code,
+            "metric": metric_id,
+            "delta": 0,
+            "label": f"Wave {point['wave']} context -> {etype}: {first.get('title', '')}",
+            "events": related,
+        }
+    return None
+
+
 @app.on_event("startup")
 def load_data():
     global countries, themes, waves, theme_data
@@ -664,6 +1063,119 @@ def get_events(cc: str, wave: Optional[int] = None, limit: int = 12, event_type:
         "total_events": len(events),
         "event_types": available_types,
         "country": country_name,
+    }
+
+
+@app.post("/api/ai/compare")
+def ai_compare(req: AICompareRequest):
+    raw = {}
+    parser_used = "ollama"
+    errors = []
+    try:
+        raw = parse_prompt_with_llm(req.prompt)
+    except Exception:
+        parser_used = "fallback"
+        raw = fallback_parse_prompt(req.prompt)
+
+    normalized, unresolved_countries, unresolved_metrics = normalize_parsed_query(raw)
+    overrides = extract_prompt_overrides(req.prompt)
+    # Ground country selection to the user prompt to avoid hallucinated countries.
+    if overrides["countries"]:
+        normalized["countries"] = sorted(set(overrides["countries"]))
+    if overrides["metrics"]:
+        normalized["metrics"] = sorted(set(normalized["metrics"] + overrides["metrics"]))
+    if not normalized["metrics"]:
+        normalized["metrics"] = ["happy"]
+        errors.append("No metric detected; defaulted to 'happy' (Happiness).")
+
+    try:
+        parsed = ParsedAIQuery(**normalized)
+    except ValidationError as e:
+        return {
+            "status": "ok",
+            "parser": parser_used,
+            "errors": ["Parsed query validation issue. Returning empty result.", str(e)],
+            "result": {"waves": [], "series": [], "annotations": []},
+        }
+
+    if len(parsed.countries) < 1:
+        errors.append("Need at least one country.")
+        return {
+            "status": "ok",
+            "parser": parser_used,
+            "errors": errors,
+            "result": {"waves": [], "series": [], "annotations": []},
+        }
+
+    if len(parsed.countries) == 1 and len(parsed.metrics) < 2:
+        errors.append("For one-country mode, provide at least two metrics (or add another country).")
+        return {
+            "status": "ok",
+            "parser": parser_used,
+            "errors": errors,
+            "result": {"waves": [], "series": [], "annotations": []},
+        }
+
+    selected_waves = sorted(set(parsed.waves if isinstance(parsed.waves, list) else list(range(1, 8))))
+    country_wave_selection = overrides.get("country_wave_selection", {})
+    if country_wave_selection:
+        metric_ref = parsed.metrics[0]
+        converted = {}
+        for cc, val in country_wave_selection.items():
+            if val == "latest":
+                lw = latest_wave_for_metric_country(cc, metric_ref)
+                if lw is not None:
+                    converted[cc] = lw
+            else:
+                converted[cc] = val
+        country_wave_selection = converted
+        if country_wave_selection:
+            selected_waves = sorted(set(country_wave_selection.values()))
+
+    conn = get_db()
+    series = []
+    annotations = []
+
+    for cc in parsed.countries:
+        for metric in parsed.metrics:
+            target_waves = selected_waves
+            if cc in country_wave_selection:
+                target_waves = [country_wave_selection[cc]]
+            points = get_series_points(cc, metric, target_waves)
+            if not points:
+                continue
+            series_key = f"{cc}:{metric}"
+            series.append({
+                "series_key": series_key,
+                "country": cc,
+                "country_name": CC_TO_NAME.get(cc, cc),
+                "metric": metric,
+                "metric_name": THEME_META[METRIC_TO_THEME[metric]]["metrics"][metric]["name"],
+                "points": points,
+            })
+            if parsed.include_events:
+                annotations.extend(
+                    detect_significant_changes(conn, cc, metric, points, parsed.event_types)
+                )
+                if not any(a["country"] == cc and a["metric"] == metric for a in annotations):
+                    fallback_annot = add_event_context_annotation(conn, cc, metric, points, parsed.event_types)
+                    if fallback_annot:
+                        annotations.append(fallback_annot)
+
+    conn.close()
+
+    if not series:
+        errors.append("No data found for selected countries/metrics/waves.")
+
+    return {
+        "status": "ok",
+        "parser": parser_used,
+        "errors": errors,
+        "result": {
+            "waves": selected_waves,
+            "series": series,
+            "annotations": annotations[:80],
+        },
     }
 
 

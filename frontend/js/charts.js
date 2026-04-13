@@ -5,6 +5,7 @@
 const Charts = (() => {
   let trendChart = null;
   let distChart = null;
+  let aiCompareChart = null;
 
   const CHART_COLORS = {
     line: '#4fc3f7',
@@ -135,5 +136,67 @@ const Charts = (() => {
     return str.length > max ? str.slice(0, max - 2) + '..' : str;
   }
 
-  return { updateTrend, updateDistribution };
+  function updateAIComparison(result) {
+    const ctx = document.getElementById('ai-compare-chart');
+    if (!ctx) return;
+    if (aiCompareChart) aiCompareChart.destroy();
+
+    const waves = result?.waves || [];
+    const labels = waves.map(w => `W${w}`);
+    const palette = ['#4fc3f7', '#ff7043', '#66bb6a', '#ffd54f', '#ab47bc', '#26c6da'];
+
+    const datasets = (result?.series || []).map((s, i) => ({
+      type: 'line',
+      label: `${s.country_name} · ${s.metric_name}`,
+      data: waves.map(w => {
+        const point = (s.points || []).find(p => p.wave === w);
+        return point ? point.mean : null;
+      }),
+      borderColor: palette[i % palette.length],
+      backgroundColor: palette[i % palette.length] + '33',
+      tension: 0.25,
+      spanGaps: true,
+      pointRadius: 3,
+      borderWidth: 2,
+    }));
+
+    const annotationDataset = {
+      type: 'scatter',
+      label: 'Event annotations',
+      data: (result?.annotations || []).map(a => ({ x: `W${a.wave}`, y: a.value, label: a.label })),
+      pointBackgroundColor: '#ef5350',
+      pointBorderColor: '#ef5350',
+      pointRadius: 5,
+      pointHoverRadius: 7,
+      showLine: false,
+    };
+    if ((result?.annotations || []).length > 0) datasets.push(annotationDataset);
+
+    aiCompareChart = new Chart(ctx, {
+      data: { labels, datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: true, position: 'bottom', labels: { color: CHART_COLORS.text, boxWidth: 12 } },
+          tooltip: {
+            callbacks: {
+              label: (item) => {
+                if (item.dataset.type === 'scatter') {
+                  return item.raw?.label || 'Annotation';
+                }
+                return `${item.dataset.label}: ${item.raw?.toFixed?.(3) ?? 'N/A'}`;
+              },
+            },
+          },
+        },
+        scales: {
+          x: { ticks: { color: CHART_COLORS.text }, grid: { color: CHART_COLORS.grid } },
+          y: { ticks: { color: CHART_COLORS.text }, grid: { color: CHART_COLORS.grid } },
+        },
+      },
+    });
+  }
+
+  return { updateTrend, updateDistribution, updateAIComparison };
 })();

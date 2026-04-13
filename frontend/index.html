@@ -10,6 +10,21 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+  <div id="intro-overlay">
+    <div class="intro-card">
+      <h1>World Values Survey Explorer</h1>
+      <p>
+        This website helps you explore social values across 108 countries and 7 survey waves (1981-2022).
+        You can analyze map trends, compare countries, inspect historical events, and use AI-powered comparison prompts.
+      </p>
+      <p>
+        Use the controls at the top to choose theme/metric/wave. Click countries on the map to view detail panels.
+        Open this intro anytime using the <strong>About</strong> button in the header.
+      </p>
+      <button id="intro-enter-btn" class="btn intro-enter-btn">Enter Explorer</button>
+    </div>
+  </div>
+
   <!-- Top Control Bar -->
   <header id="control-bar">
     <div class="logo">WVS Explorer</div>
@@ -33,6 +48,10 @@
         <input type="text" id="country-search" placeholder="Type country name..." autocomplete="off">
         <div id="search-results" class="search-dropdown"></div>
       </div>
+      <div class="control-group">
+        <label>Info</label>
+        <button id="open-intro-btn" class="about-btn" type="button">About</button>
+      </div>
     </div>
   </header>
 
@@ -41,8 +60,13 @@
     <span id="metric-desc-text">Select a theme and metric to explore survey data across 108 countries.</span>
   </div>
 
+  <div id="view-tabs">
+    <button id="tab-explorer" class="view-tab active" data-tab="explorer">Explorer</button>
+    <button id="tab-ai-compare" class="view-tab" data-tab="ai">AI Comparison</button>
+  </div>
+
   <!-- Main Content -->
-  <main id="main-content">
+  <main id="main-content" class="tab-content active" data-tab-content="explorer">
     <!-- Map Panel -->
     <section id="map-panel">
       <div id="map-container">
@@ -89,6 +113,30 @@
     </aside>
   </main>
 
+  <section id="ai-compare-panel" class="tab-content" data-tab-content="ai">
+    <div class="ai-box">
+      <h3>AI-Powered Comparison and Explanation</h3>
+      <p class="chart-desc">Ask in natural language. The AI first produces structured JSON, then backend validates it and fetches data from SQLite.</p>
+      <div class="ai-prompt-row">
+        <input id="ai-prompt-input" type="text" placeholder="Compare happiness and income for Poland and Germany across all waves and explain major changes using historical events.">
+        <button id="ai-run-btn" class="btn btn-small">Run AI Comparison</button>
+      </div>
+      <div id="ai-status" class="event-empty"></div>
+      <div id="ai-errors-card" class="ai-card" style="display:none;">
+        <h4>Errors</h4>
+        <div id="ai-errors" class="event-empty"></div>
+      </div>
+      <div class="ai-chart-card">
+        <h4>Comparison Chart (with event annotations)</h4>
+        <canvas id="ai-compare-chart"></canvas>
+      </div>
+      <div class="ai-card">
+        <h4>Detected Change Explanations</h4>
+        <div id="ai-annotations-list" class="events-list"></div>
+      </div>
+    </div>
+  </section>
+
   <!-- Comparison Panel -->
   <section id="compare-panel" class="compare-collapsed">
     <div id="compare-header" onclick="toggleCompare()">
@@ -123,6 +171,7 @@
   <script src="js/map.js"></script>
   <script src="js/charts.js"></script>
   <script src="js/compare.js"></script>
+  <script src="js/ai_compare.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => App.init());
   </script>
