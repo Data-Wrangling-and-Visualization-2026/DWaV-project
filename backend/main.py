@@ -785,7 +785,7 @@ def fetch_events_for_wave(conn, cc: str, wave: int, event_types: list[str], limi
         clauses.append(f"LOWER(event_type) IN ({placeholders})")
         params.extend(event_types)
     query = f"""
-        SELECT event_type, title, country, source
+        SELECT event_type, title, description, country, source
         FROM wvs_events
         WHERE {" AND ".join(clauses)}
         ORDER BY cc IS NULL, confidence DESC, id

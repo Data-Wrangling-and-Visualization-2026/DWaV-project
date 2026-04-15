@@ -93,8 +93,25 @@ const AICompare = (() => {
           <span class="event-type">${a.country} / ${a.metric}</span>
         </div>
         <div class="event-title">${escapeHtml(a.label || '')}</div>
+        ${renderEventDetails(a)}
       </div>
     `).join('');
+  }
+
+  function renderEventDetails(a) {
+    const evt = (a && a.events && a.events.length) ? a.events[0] : null;
+    if (!evt) return '';
+    const title = (evt.title || '').trim();
+    const desc = (evt.description || '').trim();
+    const source = (evt.source || '').trim();
+    const text = (desc || title);
+    if (!text && !source) return '';
+    return `
+      <div class="event-meta">
+        ${text ? escapeHtml(text) : ''}
+        ${source ? ` · ${escapeHtml(source)}` : ''}
+      </div>
+    `;
   }
 
   function escapeHtml(value) {
