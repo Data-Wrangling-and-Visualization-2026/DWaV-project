@@ -23,6 +23,8 @@ This version is fully SQLite-based and now includes **historical events per wave
 - Events are imported into SQLite table `wvs_events` and served from DB.
 - Added an in-panel **event type filter** for easier use by new users.
 - Added global wave context events (e.g. international events) when country-specific events are missing.
+- Added **AI-Powered Comparison** — ask natural language questions (e.g., "Compare happiness and income for Poland and Germany") and get charts with historical event annotations.
+- Added **welcome modal** with feature explanation for first-time users.
 
 ## Features
 
