@@ -77,7 +77,11 @@ Place `wvs_data.db` in the project root (`DWaV-v3/`).
 1. Download `wvs_data.db` from:
    [DWaV database (Google Drive)](https://drive.google.com/drive/folders/1r1kX32NKC0Tx9SCo3kmC4VZgXkHJ3e4k?usp=sharing)
 2. Put it into project root.
-3. Run app (Docker or local).
+3. Install Ollama and pull the model (for AI feature):
+   ```bash
+   ollama pull qwen2.5:14b
+   ```
+4. Run app (Docker or local).
 
 ### Prerequisites
 
@@ -147,10 +151,7 @@ This version adds an **AI Comparison** feature that allows you to ask natural la
 - *"Compare Brazil and Uganda happiness"*
 - *"Compare happiness and income of Italy and Tajikistan"*
 
-### Requirements
 
-- Ollama with a model like `qwen2.5:14b` 
-- Configure the API URL in backend settings (default: `http://localhost:11434` for Ollama)
 
   
 
