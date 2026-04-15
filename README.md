@@ -85,7 +85,7 @@ Place `wvs_data.db` in the project root.
 ### Prerequisites
 
 - Docker Desktop **or** Python 3.11+
-- ~10 GB free disk space
+- ~10 GB free disk space (580 MB database + 9 GB Ollama model + Docker images)
 - Ollama with model:
 
 ```bash
