@@ -118,6 +118,44 @@ Open [http://localhost:8000](http://localhost:8000).
 | `GET /api/events/{cc}?wave=N&event_type=TYPE&limit=24` | Historical events for country + global context |
 | `GET /api/country/{cc}` | Full country data |
 
+## AI-Powered Comparison & Explanation
+
+This version adds an **AI Comparison** feature that allows you to ask natural language questions about happiness, income, and other WVS metrics across countries and waves.
+
+### How It Works
+
+1. You type a question in natural language
+2. Backend sends your query to an LLM 
+3. LLM returns a structured JSON (countries, metrics, waves, required analysis)
+4. Backend validates the JSON and fetches real data from SQLite
+5. Frontend displays the results
+
+### What You See After the Query
+
+- **Comparison Chart** — displays trends for the requested countries and metrics across all waves with historical event annotations
+- **Detected Change Explanations** — shows historical events that match the selected country, wave, and metric
+
+### Example Questions to Ask
+
+- *"Compare happiness and income for Poland and Germany across all waves and explain major changes using historical events"*
+- *"Compare Russians' happiness and interest in politics"*
+- *"Compare Tajikistan and Uzbekistan in health and show historical events"*
+- *"Compare Brazil and Uganda happiness"*
+- *"Compare happiness and income of Italy and Tajikistan"*
+
+### Requirements
+
+- Ollama with a model like `qwen2.5:14b` 
+- Configure the API URL in backend settings (default: `http://localhost:11434` for Ollama)
+
+  
+
+### API Endpoints for AI
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/ai/compare` | POST | Send natural language query, get structured comparison with event explanations |
+
 
 ## Configuration
 
