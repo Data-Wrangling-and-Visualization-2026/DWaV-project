@@ -1,4 +1,4 @@
-```markdown
+
 # 🌍 World Values Survey Explorer (v3 — SQLite + Historical Events)
 
 ![Python](https://img.shields.io/badge/Python-3.11-blue)
