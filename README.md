@@ -81,9 +81,9 @@ Place `wvs_data.db` in the project root (`DWaV-v3/`).
 
 ### Prerequisites
 
-- Docker Desktop (for containerized run) OR
-- Python 3.11+ with pip (for local run)
-- 1 GB free disk space (for database + Docker images)
+- Docker Desktop (for containerized run) OR Python 3.11+ with pip (for local run)
+- **~10 GB free disk space** ( ~580 MB for database + ~9 GB for Ollama model + Docker images)
+- **Ollama** with `qwen2.5:14b` model (required for AI-Powered Comparison feature)
 
 ### Run the app
 
