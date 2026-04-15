@@ -82,6 +82,13 @@ Place `wvs_data.db` in the project root.
 
 ## ⚙️ Setup
 
+### Download Database
+
+Download `wvs_data.db` (~580 MB) from:  
+[Google Drive](https://drive.google.com/drive/folders/1r1kX32NKC0Tx9SCo3kmC4VZgXkHJ3e4k?usp=sharing)
+
+Place the file in the project root.
+
 ### Prerequisites
 
 - Docker Desktop **or** Python 3.11+
