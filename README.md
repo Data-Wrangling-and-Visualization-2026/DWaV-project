@@ -182,4 +182,3 @@ The app:
 * Irina Napalkova
 * Amaliya Kharisova
 
-```
