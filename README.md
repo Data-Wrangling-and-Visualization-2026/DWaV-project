@@ -39,6 +39,8 @@ This version is fully SQLite-based and now includes **historical events per wave
 - Wave selector (specific wave or latest).
 - Fast country search.
 - Compare up to **10 countries** simultaneously (trend line chart + Welzel radar)
+- **AI-Powered Comparison** — type any question in natural language, AI parses it and returns comparison charts with detected historical event explanations.
+- **Welcome modal** — shows available features and example queries when the app first loads.
 
 ## Project Structure
 
