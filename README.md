@@ -56,7 +56,7 @@ This version is fully SQLite-based and now includes **historical events per wave
 │       ├── app.js
 │       ├── map.js
 │       ├── charts.js
-│       ├──  ai_compare.js
+│       ├── ai_compare.js
 │       └── compare.js
 ├── json_to_sqlite.py
 ├── wvs_events_final.json
