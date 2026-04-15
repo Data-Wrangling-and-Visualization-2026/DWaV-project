@@ -9,6 +9,7 @@
 Interactive web app for exploring data from the World Values Survey across **108 countries** and **7 waves (1981–2022)**.
 
 This version is fully SQLite-based and now includes **historical events per wave/country** shown directly in the detail panel.
+<img width="1899" height="903" alt="image" src="https://github.com/user-attachments/assets/ab6d762a-85d2-420a-9a37-c0fae1516c19" />
 
 ---
 
