@@ -149,6 +149,7 @@ Ask natural language questions like:
 * "Compare Importance of Work and Life Satisfaction for Poland and Germany across all waves and explain major changes using historical events"
 * "Compare Freedom of Choice and Health for Poland and Germany across all waves and explain major changes using historical events"
 * "Compare Health (self-rated) and Freedom of Choice for Poland and Germany across all waves and explain major changes using historical events"
+  
 The app:
 
 1. Sends query to LLM
