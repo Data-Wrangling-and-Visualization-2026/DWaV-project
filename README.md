@@ -144,10 +144,11 @@ Open: [http://localhost:8000](http://localhost:8000)
 
 Ask natural language questions like:
 
-* "Compare happiness and income for Poland and Germany"
-* "Compare Russians' happiness and interest in politics"
-* "Compare Brazil and Uganda happiness"
-
+* "Compare happiness and income for Poland and Germany across all waves and explain major changes using historical events"
+* "Compare life satisfaction for Japan and the United States and explain major changes using historical events"
+* "Compare Importance of Work and Life Satisfaction for Poland and Germany across all waves and explain major changes using historical events"
+* "Compare Freedom of Choice and Health for Poland and Germany across all waves and explain major changes using historical events"
+* "Compare Health (self-rated) and Freedom of Choice for Poland and Germany across all waves and explain major changes using historical events"
 The app:
 
 1. Sends query to LLM
